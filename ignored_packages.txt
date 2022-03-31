@@ -1,2 +1,0 @@
-UnityTechnologies.Unity.2020
-BlenderFoundation.Blender
