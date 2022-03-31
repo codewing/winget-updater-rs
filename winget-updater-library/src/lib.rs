@@ -4,11 +4,11 @@ pub mod wud {
 
     #[derive(Debug)]
     pub struct WinPackage {
-        name: String,
-        id: String,
-        installed_version: String,
-        available_version: String,
-        source: String
+        pub name: String,
+        pub id: String,
+        pub installed_version: String,
+        pub available_version: String,
+        pub source: String
     }
 
     pub fn get_packages_to_update(ignored_package_ids: Vec<String>) -> Vec<WinPackage> {

@@ -8,3 +8,4 @@ edition = "2021"
 
 [dependencies]
 winget-updater-library = { path = "../winget-updater-library" }
+eframe = "0.17"
