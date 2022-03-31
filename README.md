@@ -10,4 +10,4 @@ This tool exist because `winget upgrade --all` doesn't support ignoring certain 
 ## Usage
 
 1. Create a file with the ignored ids (e.g. ignored.txt)
-2. Run the tool `cargo run ignored.txt`
+2. Run the tool `cargo run -- --ignore-file ./ignored_packages.txt`
