@@ -19,7 +19,7 @@ impl App for UpdaterApp {
         CentralPanel::default().show(ctx, |ui| {
             ScrollArea::both().auto_shrink([false, true]).show(ui, |ui| {
                 for package in &self.packages {
-                    ui.with_layout(Layout::left_to_right(), |ui| {
+                    ui.horizontal( |ui| {
                         ui.label(&package.name);
                         ui.label(&package.id);
                         ui.label(&package.installed_version);
@@ -42,6 +42,6 @@ impl App for UpdaterApp {
 fn main() {
     let app = UpdaterApp::new();
     let mut win_options = NativeOptions::default();
-    win_options.initial_window_size = Some(Vec2::new(540f32, 960f32));
+    win_options.initial_window_size = Some(Vec2::new(600f32, 400f32));
     run_native(Box::new(app), win_options);
 }
