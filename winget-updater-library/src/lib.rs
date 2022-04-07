@@ -24,28 +24,25 @@ pub mod wud {
             let captures = regex.captures(&line).unwrap();
             let package_id = &captures["id"];
             
-            if !ignored_package_ids.contains(&package_id.to_string()) {
-                let package = WinPackage {
-                    name: captures["name"].to_string(),
-                    id: package_id.to_string(),
-                    installed_version: captures["cur_vers"].to_string(),
-                    available_version: captures["new_vers"].to_string(),
-                    source: captures["source"].to_string()
-                };
+            if ignored_package_ids.contains(&package_id.to_string()) { continue; } 
 
-                println!("Adding {:?}", package);
-                result_vec.push(package);
-            } else {
-                println!("Ignored package {}", package_id);
-            }
+            let package = WinPackage {
+                name: captures["name"].to_string(),
+                id: package_id.to_string(),
+                installed_version: captures["cur_vers"].to_string(),
+                available_version: captures["new_vers"].to_string(),
+                source: captures["source"].to_string()
+            };
+
+            result_vec.push(package);
         }
-        println!("Packages updated");
+
         result_vec
     }
 
-    pub fn update_package(package: &WinPackage) {
+    pub fn update_package(package_id: &str) {
         let update = Command::new("cmd")
-                        .args(["/C", "winget upgrade", package.id.as_str()])
+                        .args(["/C", "winget upgrade", package_id])
                         .output()
                         .expect("failed to execute 'winget upgrade <package>'");
         let update_result = String::from_utf8_lossy(&update.stdout);

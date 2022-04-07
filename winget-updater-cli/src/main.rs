@@ -14,7 +14,7 @@ fn main() {
     let ignored_package_ids = collect_ignored_packages(&args.ignore_file);
 
     for package in get_packages_to_update(ignored_package_ids) {
-        update_package(&package);
+        update_package(&package.id.as_str());
     }
 }
 
