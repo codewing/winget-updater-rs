@@ -1,6 +1,6 @@
-use std::thread;
+use std::{thread, sync::mpsc::{self, channel}};
 
-use eframe::{run_native, epi::App, egui::{CentralPanel, ScrollArea, Grid, Button}, NativeOptions, epaint::Vec2};
+use eframe::{run_native, epi::App, egui::{CentralPanel, ScrollArea, Grid, Button}, NativeOptions, epaint::{Vec2, mutex::Mutex}};
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
@@ -21,7 +21,8 @@ impl UpdaterApp {
 
 impl App for UpdaterApp {
 
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &eframe::epi::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &eframe::epi::Frame) {
+        
         CentralPanel::default().show(ctx, |ui| {
             ScrollArea::both().auto_shrink([false, true]).show(ui, |ui| {
                 Grid::new("package_grid").show(ui, |ui| {
@@ -37,28 +38,20 @@ impl App for UpdaterApp {
             });
 
             if ui.add_enabled(!self.is_updating, Button::new("Update selected")).clicked() {
-                self.is_updating = true;
+                //self.is_updating = true;
                 
-                /*let packages: Vec<_> = self.packages.iter().filter_map(|(enabled, package)| {
+                let packages: Vec<String> = self.packages.iter().filter_map(|(enabled, package)| {
                     if *enabled { () }
 
-                    Some(package.id.as_str())
+                    Some(package.id.clone())
                 }).collect();
 
 
-                let updater_handle = thread::spawn(move|| {
+                thread::spawn(move|| {
                     for ele in packages {
-                        
+                        update_package(ele.as_str())
                     }
-                });*/
-                
-                for (requested_update, package) in self.packages.iter() {
-                    if *requested_update {
-                        update_package(&package.id.as_str());
-                    }
-                }
-                self.is_updating = false;
-                
+                });                
             }
         });
     }
