@@ -1,6 +1,6 @@
 use std::{thread, sync::mpsc::{channel, Sender, Receiver}};
 
-use eframe::{run_native, epi::{App, IconData}, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel}, NativeOptions, epaint::{Vec2}};
+use eframe::{run_native, epi::{App}, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel}, NativeOptions, epaint::{Vec2}};
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
