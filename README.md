@@ -26,3 +26,8 @@ This tool exist because `winget upgrade --all` doesn't support ignoring certain 
 4. Run the tool  
    - Prebuild: `./winget-updater-cli.exe --ignore-file ignored_packages.txt`
    - With building `cargo run --bin winget-updater-cli -- --ignore-file ./ignored_packages.txt`
+
+
+## Attribution
+
+<a href="https://www.flaticon.com/free-icons/update" title="update icons">Update icons created by Smashicons - Flaticon</a>
