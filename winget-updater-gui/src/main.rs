@@ -91,6 +91,6 @@ impl App for UpdaterApp {
 fn main() {
     let app = UpdaterApp::new();
     let mut win_options = NativeOptions::default();
-    win_options.initial_window_size = Some(Vec2::new(800f32, 600f32));
+    win_options.initial_window_size = Some(Vec2::new(750f32, 500f32));
     run_native(Box::new(app), win_options);
 }
