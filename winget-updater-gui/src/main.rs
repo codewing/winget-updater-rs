@@ -1,20 +1,26 @@
-use std::{thread, sync::mpsc::{self, channel}};
+use std::{thread, sync::mpsc::{channel, Sender, Receiver}};
 
-use eframe::{run_native, epi::App, egui::{CentralPanel, ScrollArea, Grid, Button}, NativeOptions, epaint::{Vec2, mutex::Mutex}};
+use eframe::{run_native, epi::App, egui::{CentralPanel, ScrollArea, Grid, Button}, NativeOptions, epaint::{Vec2}};
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
     packages: Vec<(bool, WinPackage)>,
     is_updating: bool,
+    sender: Sender<bool>,
+    receiver: Receiver<bool>,
 }
 
 impl UpdaterApp {
     fn new() -> UpdaterApp {
         let updatable_packages = get_packages_to_update(Vec::new());
         let ui_packages = updatable_packages.into_iter().map(|package| (false, package) ).collect();
+        let (send, receive) = channel();
+
         UpdaterApp { 
             packages: ui_packages,
             is_updating: false,
+            sender: send,
+            receiver: receive,
         }
     }
 }
@@ -38,20 +44,29 @@ impl App for UpdaterApp {
             });
 
             if ui.add_enabled(!self.is_updating, Button::new("Update selected")).clicked() {
-                //self.is_updating = true;
+                self.is_updating = true;
                 
                 let packages: Vec<String> = self.packages.iter().filter_map(|(enabled, package)| {
-                    if *enabled { () }
-
-                    Some(package.id.clone())
+                    match *enabled {
+                        true => Some(package.id.clone()),
+                        false => None
+                    }
                 }).collect();
 
+                let sender_copy = self.sender.clone();
 
                 thread::spawn(move|| {
                     for ele in packages {
                         update_package(ele.as_str())
                     }
+                    sender_copy.send(true).unwrap();
                 });                
+            } else if self.is_updating {
+                let result = self.receiver.try_recv();
+                match result {
+                    Ok(_) => {self.is_updating = false},
+                    Err(_) => {},
+                }
             }
         });
     }
