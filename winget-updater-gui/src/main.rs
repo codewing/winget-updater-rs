@@ -1,6 +1,6 @@
 use std::{thread, sync::mpsc::{channel, Sender, Receiver}};
 
-use eframe::{run_native, epi::{App}, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel}, NativeOptions, epaint::{Vec2}};
+use eframe::{run_native, epi::{App}, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel, Layout}, NativeOptions, epaint::{Vec2}};
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
@@ -60,7 +60,7 @@ impl UpdaterApp {
     }
 
     fn handle_package_grid(&mut self, ui: &mut eframe::egui::Ui) {
-        ScrollArea::both().auto_shrink([false, true]).show(ui, |ui| {
+        ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
             Grid::new("package_grid").show(ui, |ui| {
                 ui.label("Update");
                 ui.label("Package Name");
@@ -72,7 +72,7 @@ impl UpdaterApp {
 
                 for item in self.packages.iter_mut() {
                     ui.add_enabled_ui(item.status == UpdateStatus::NoOp, |ui| {
-                        ui.checkbox(&mut item.checked, "|");
+                        ui.checkbox(&mut item.checked, "");
                     });
                     ui.label(&item.package.name);
                     ui.label(&item.package.id);
@@ -138,7 +138,7 @@ impl UpdaterApp {
     fn refresh_package_list(&mut self) {
         self.is_refreshing = true;
         self.packages.clear();
-        
+
         let sender_copy = self.sender_refresh.clone();
 
         thread::spawn(move|| {
@@ -182,7 +182,10 @@ impl App for UpdaterApp {
         TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 self.handle_update_button(ui);
-                self.handle_refresh_button(ui);
+                ui.with_layout(Layout::right_to_left(), |ui| {
+                    self.handle_refresh_button(ui);
+                });
+                
             });
         });
     }
