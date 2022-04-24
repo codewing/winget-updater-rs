@@ -1,6 +1,13 @@
 # winget updater
 
-This tool exist because `winget upgrade --all` doesn't support ignoring certain updates yet.
+A simple wrapper around `winget` - gui mode or cli
+
+![Preview Image](images/screeenshot.png)
+
+This tool exist because `winget upgrade --all` doesn't support ignoring certain updates yet.  
+_And maybe I'm interested in learning rust so feel free to improve or extend my code with a PR._
+
+---
 
 ## Development Setup
 
