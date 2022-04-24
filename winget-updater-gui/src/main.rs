@@ -4,16 +4,46 @@ use eframe::{run_native, epi::{App}, egui::{CentralPanel, ScrollArea, Grid, Butt
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
-    packages: Vec<(bool, WinPackage)>,
+    packages: Vec<UpdaterListElement>,
     is_updating: bool,
     sender: Sender<bool>,
     receiver: Receiver<bool>,
 }
 
+struct UpdaterListElement {
+    checked: bool,
+    status: UpdateStatus,
+    package: WinPackage
+}
+
+enum UpdateStatus {
+    NoOp,
+    Waiting,
+    Updating,
+    Done
+}
+
+impl UpdaterListElement {
+    fn status_message(&self) -> &str {
+        match &self.status {
+            UpdateStatus::NoOp => "",
+            UpdateStatus::Waiting => "Waiting",
+            UpdateStatus::Updating => "Updating",
+            UpdateStatus::Done => "Done"
+        }
+    }
+}
+
 impl UpdaterApp {
     fn new() -> UpdaterApp {
         let updatable_packages = get_packages_to_update(Vec::new());
-        let ui_packages = updatable_packages.into_iter().map(|package| (false, package) ).collect();
+        let ui_packages = updatable_packages.into_iter().map(|package| {
+            UpdaterListElement {
+                checked: false, 
+                status: UpdateStatus::NoOp,
+                package: package
+            }
+        } ).collect();
         let (send, receive) = channel();
 
         UpdaterApp { 
@@ -27,12 +57,21 @@ impl UpdaterApp {
     fn handle_package_grid(&mut self, ui: &mut eframe::egui::Ui) {
         ScrollArea::both().auto_shrink([false, true]).show(ui, |ui| {
             Grid::new("package_grid").show(ui, |ui| {
-                for (checked, package) in self.packages.iter_mut() {
-                    ui.checkbox(checked, "|");
-                    ui.label(&package.name);
-                    ui.label(&package.id);
-                    ui.label(&package.installed_version);
-                    ui.label(&package.available_version);
+                ui.label("Update");
+                ui.label("Package Name");
+                ui.label("Package ID");
+                ui.label("Installed");
+                ui.label("Available");
+                ui.label("Status");
+                ui.end_row();
+
+                for item in self.packages.iter_mut() {
+                    ui.checkbox(&mut item.checked, "|");
+                    ui.label(&item.package.name);
+                    ui.label(&item.package.id);
+                    ui.label(&item.package.installed_version);
+                    ui.label(&item.package.available_version);
+                    ui.label(item.status_message());
                     ui.end_row();
                 }
             });
@@ -42,10 +81,16 @@ impl UpdaterApp {
     fn handle_update_button(&mut self, ui: &mut eframe::egui::Ui) {
         if ui.add_enabled(!self.is_updating, Button::new("Update selected")).clicked() {
             self.is_updating = true;
+
+            for element in &mut self.packages {
+                if element.checked {
+                    element.status = UpdateStatus::Waiting
+                }
+            }
             
-            let packages: Vec<String> = self.packages.iter().filter_map(|(enabled, package)| {
-                match *enabled {
-                    true => Some(package.id.clone()),
+            let packages: Vec<String> = self.packages.iter().filter_map(|item| {
+                match item.checked {
+                    true => Some(item.package.id.clone()),
                     false => None
                 }
             }).collect();
@@ -91,6 +136,6 @@ impl App for UpdaterApp {
 fn main() {
     let app = UpdaterApp::new();
     let mut win_options = NativeOptions::default();
-    win_options.initial_window_size = Some(Vec2::new(750f32, 500f32));
+    win_options.initial_window_size = Some(Vec2::new(800f32, 600f32));
     run_native(Box::new(app), win_options);
 }
