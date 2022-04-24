@@ -6,8 +6,11 @@ use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_pac
 struct UpdaterApp {
     packages: Vec<UpdaterListElement>,
     is_updating: bool,
-    sender: Sender<bool>,
-    receiver: Receiver<bool>,
+    is_refreshing: bool,
+    sender: Sender<UpdaterMessage>,
+    receiver: Receiver<UpdaterMessage>,
+    sender_refresh: Sender<Vec<WinPackage>>,
+    receiver_refresh: Receiver<Vec<WinPackage>>,
 }
 
 struct UpdaterListElement {
@@ -16,6 +19,12 @@ struct UpdaterListElement {
     package: WinPackage
 }
 
+struct UpdaterMessage {
+    message: String,
+    payload: String,
+}
+
+#[derive(PartialEq)]
 enum UpdateStatus {
     NoOp,
     Waiting,
@@ -36,21 +45,17 @@ impl UpdaterListElement {
 
 impl UpdaterApp {
     fn new() -> UpdaterApp {
-        let updatable_packages = get_packages_to_update(Vec::new());
-        let ui_packages = updatable_packages.into_iter().map(|package| {
-            UpdaterListElement {
-                checked: false, 
-                status: UpdateStatus::NoOp,
-                package: package
-            }
-        } ).collect();
         let (send, receive) = channel();
+        let (send_refresh, receive_refresh) = channel();
 
         UpdaterApp { 
-            packages: ui_packages,
+            packages: Vec::new(),
             is_updating: false,
+            is_refreshing: false,
             sender: send,
             receiver: receive,
+            sender_refresh: send_refresh,
+            receiver_refresh: receive_refresh
         }
     }
 
@@ -66,7 +71,9 @@ impl UpdaterApp {
                 ui.end_row();
 
                 for item in self.packages.iter_mut() {
-                    ui.checkbox(&mut item.checked, "|");
+                    ui.add_enabled_ui(item.status == UpdateStatus::NoOp, |ui| {
+                        ui.checkbox(&mut item.checked, "|");
+                    });
                     ui.label(&item.package.name);
                     ui.label(&item.package.id);
                     ui.label(&item.package.installed_version);
@@ -79,7 +86,7 @@ impl UpdaterApp {
     }
 
     fn handle_update_button(&mut self, ui: &mut eframe::egui::Ui) {
-        if ui.add_enabled(!self.is_updating, Button::new("Update selected")).clicked() {
+        if ui.add_enabled(!self.is_refreshing && !self.is_updating, Button::new("Update selected")).clicked() {
             self.is_updating = true;
 
             for element in &mut self.packages {
@@ -99,15 +106,66 @@ impl UpdaterApp {
 
             thread::spawn(move|| {
                 for ele in packages {
-                    update_package(ele.as_str())
+                    sender_copy.send(UpdaterMessage {message: "Package_Updating".to_string(), payload: ele.clone()}).unwrap();
+                    update_package(ele.as_str());
+                    sender_copy.send(UpdaterMessage {message: "Package_Done".to_string(), payload: ele}).unwrap();
                 }
-                sender_copy.send(true).unwrap();
+                sender_copy.send(UpdaterMessage {message: "Finished".to_string(), payload: String::new()}).unwrap();
             });                
         } else if self.is_updating {
             let result = self.receiver.try_recv();
             match result {
-                Ok(_) => {self.is_updating = false},
-                Err(_) => {},
+                Ok(content) => {
+                    match content.message.as_str() {
+                        "Package_Updating" => {
+                            let package = self.packages.iter_mut().find(|elem| elem.package.id.eq(&content.payload)).unwrap();
+                            package.status = UpdateStatus::Updating;
+                        }
+                        "Package_Done" => {
+                            let package = self.packages.iter_mut().find(|elem| elem.package.id.eq(&content.payload)).unwrap();
+                            package.status = UpdateStatus::Done;
+                            package.checked = false;
+                        }
+                        "Finished" => { self.is_updating = false }
+                        _ => {}
+                    }
+                }
+                Err(_) => {} // ignoring failed try receives..
+            }
+        }
+    }
+
+    fn refresh_package_list(&mut self) {
+        self.is_refreshing = true;
+        self.packages.clear();
+        
+        let sender_copy = self.sender_refresh.clone();
+
+        thread::spawn(move|| {
+            let updatable_packages = get_packages_to_update(Vec::new());
+            sender_copy.send(updatable_packages).unwrap();
+        });
+        
+    }
+
+    fn handle_refresh_button(&mut self, ui: &mut eframe::egui::Ui) {
+        if ui.add_enabled(!self.is_refreshing && !self.is_updating, Button::new("Refresh")).clicked() {
+            self.refresh_package_list();
+        } else if self.is_refreshing {
+            let result = self.receiver_refresh.try_recv();
+            match result {
+                Ok(updatable_packages) => {
+                    self.is_refreshing = false;
+                    let ui_packages: Vec<UpdaterListElement> = updatable_packages.into_iter().map(|package| {
+                        UpdaterListElement {
+                            checked: false, 
+                            status: UpdateStatus::NoOp,
+                            package: package
+                        }
+                    } ).collect();
+                    self.packages = ui_packages;
+                }
+                Err(_) => {}
             }
         }
     }
@@ -122,7 +180,10 @@ impl App for UpdaterApp {
         });
 
         TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            self.handle_update_button(ui);
+            ui.horizontal(|ui| {
+                self.handle_update_button(ui);
+                self.handle_refresh_button(ui);
+            });
         });
     }
 
@@ -134,7 +195,8 @@ impl App for UpdaterApp {
 }
 
 fn main() {
-    let app = UpdaterApp::new();
+    let mut app = UpdaterApp::new();
+    app.refresh_package_list();
     let mut win_options = NativeOptions::default();
     win_options.initial_window_size = Some(Vec2::new(800f32, 600f32));
     run_native(Box::new(app), win_options);
