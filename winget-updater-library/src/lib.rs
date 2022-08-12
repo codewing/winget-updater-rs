@@ -16,7 +16,7 @@ pub mod wud {
         let packages_to_update = get_available_packages_to_update();
         
     
-        let regex = Regex::new(r"^(?P<name>.+?)\s+(?P<id>\S+?)\s+(?P<cur_vers>\S+?)\s+(?P<new_vers>\S+?)\s+(?P<source>\S+)$").unwrap();
+        let regex = Regex::new(r"^(?P<name>.+?)\s+(?P<id>\S+\.\S+(\.\S+)*)\s+(?P<cur_vers>(< )?\S+?)\s+(?P<new_vers>\S+?)\s+(?P<source>\S+)$").unwrap();
 
         let mut result_vec: Vec<WinPackage> = Vec::new();
     
@@ -56,7 +56,8 @@ pub mod wud {
                                     .expect("failed to execute 'winget upgrade'");
         let result = String::from_utf8_lossy(&winget_output.stdout);
         let lines: Vec<_> = result.lines().collect();
-        let packages_to_update = lines[2..lines.len()-1].into_iter().map(|x| x.to_string()).collect();
+        let last_line = lines.iter().rposition(|&x| x.contains("upgrades available.")).unwrap();
+        let packages_to_update = lines[2..last_line].into_iter().map(|x| x.to_string()).collect();
         packages_to_update
     }
     
