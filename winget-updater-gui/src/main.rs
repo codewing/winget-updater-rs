@@ -1,6 +1,6 @@
 use std::{thread, sync::mpsc::{channel, Sender, Receiver}};
 
-use eframe::{run_native, epi::{App}, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel, Layout}, NativeOptions, epaint::{Vec2}};
+use eframe::{run_native, App, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel, Layout}, NativeOptions, epaint::{Vec2}};
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
@@ -44,11 +44,11 @@ impl UpdaterListElement {
 }
 
 impl UpdaterApp {
-    fn new() -> UpdaterApp {
+    fn new(_cc: &eframe::CreationContext<'_>) -> UpdaterApp {
         let (send, receive) = channel();
         let (send_refresh, receive_refresh) = channel();
-
-        UpdaterApp { 
+        
+        let mut updater = UpdaterApp { 
             packages: Vec::new(),
             is_updating: false,
             is_refreshing: false,
@@ -56,7 +56,11 @@ impl UpdaterApp {
             receiver: receive,
             sender_refresh: send_refresh,
             receiver_refresh: receive_refresh
-        }
+        };
+
+        updater.refresh_package_list();
+
+        updater
     }
 
     fn handle_package_grid(&mut self, ui: &mut eframe::egui::Ui) {
@@ -173,7 +177,7 @@ impl UpdaterApp {
 
 impl App for UpdaterApp {
 
-    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &eframe::epi::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         
         CentralPanel::default().show(ctx, |ui| {
             self.handle_package_grid(ui);
@@ -182,25 +186,16 @@ impl App for UpdaterApp {
         TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 self.handle_update_button(ui);
-                ui.with_layout(Layout::right_to_left(), |ui| {
+                ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
                     self.handle_refresh_button(ui);
                 });
-                
             });
         });
-    }
-
-    fn name(&self) -> &str {
-        "WinGet Updater"
-    }
-
-    
+    }    
 }
 
 fn main() {
-    let mut app = UpdaterApp::new();
-    app.refresh_package_list();
     let mut win_options = NativeOptions::default();
-    win_options.initial_window_size = Some(Vec2::new(800f32, 600f32));
-    run_native(Box::new(app), win_options);
+    win_options.initial_window_size = Some(Vec2::new(830f32, 600f32));
+    run_native("WinGet Updater", win_options, Box::new(|cc| Box::new(UpdaterApp::new(cc))));
 }

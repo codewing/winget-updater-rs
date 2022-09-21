@@ -1,6 +1,6 @@
 [package]
 name = "winget-updater-gui"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Winfried Baumann <codewing@web.de>"]
 edition = "2021"
 
@@ -8,7 +8,7 @@ build = "build/build.rs"
 
 [dependencies]
 winget-updater-library = { path = "../winget-updater-library" }
-eframe = "0.17"
+eframe = "0.19"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1.12"
