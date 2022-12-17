@@ -14,27 +14,34 @@ pub mod wud {
     pub fn get_packages_to_update(ignored_package_ids: Vec<String>) -> Vec<WinPackage> {
 
         let packages_to_update = get_available_packages_to_update();
-        
-    
-        let regex = Regex::new(r"^(?P<name>.+?)\s+(?P<id>\S+\.\S+(\.\S+)*)\s+(?P<cur_vers>(< )?\S+?)\s+(?P<new_vers>\S+?)\s+(?P<source>\S+)$").unwrap();
+
+        let regex = Regex::new(r"^(?P<name>.+?)\s+(?P<id>\S+\.\S+(\.\S+)*)\s+(?P<cur_vers>([<>] )?\S+?)\s+(?P<new_vers>\S+?)\s+(?P<source>\S+)$").unwrap();
 
         let mut result_vec: Vec<WinPackage> = Vec::new();
     
         for line in packages_to_update {
-            let captures = regex.captures(&line).unwrap();
-            let package_id = &captures["id"];
-            
-            if ignored_package_ids.contains(&package_id.to_string()) { continue; } 
+            let line_captures = regex.captures(&line);
+            match line_captures {
+                None => {
+                    println!("Error parsing line {}", line);
+                    continue;
+                },
+                Some(captures) => {
+                    let package_id = &captures["id"];
 
-            let package = WinPackage {
-                name: captures["name"].to_string(),
-                id: package_id.to_string(),
-                installed_version: captures["cur_vers"].to_string(),
-                available_version: captures["new_vers"].to_string(),
-                source: captures["source"].to_string()
-            };
+                    if ignored_package_ids.contains(&package_id.to_string()) { continue; }
 
-            result_vec.push(package);
+                    let package = WinPackage {
+                        name: captures["name"].to_string(),
+                        id: package_id.to_string(),
+                        installed_version: captures["cur_vers"].to_string(),
+                        available_version: captures["new_vers"].to_string(),
+                        source: captures["source"].to_string()
+                    };
+
+                    result_vec.push(package);
+                }
+            }
         }
 
         result_vec
