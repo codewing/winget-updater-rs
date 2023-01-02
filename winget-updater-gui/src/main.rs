@@ -1,12 +1,14 @@
 use std::{thread, sync::mpsc::{channel, Sender, Receiver}};
 
 use eframe::{run_native, App, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel, Layout}, NativeOptions, epaint::{Vec2}};
+use eframe::egui::Direction::TopDown;
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
 struct UpdaterApp {
     packages: Vec<UpdaterListElement>,
     is_updating: bool,
     is_refreshing: bool,
+    status_message: String,
     sender: Sender<UpdaterMessage>,
     receiver: Receiver<UpdaterMessage>,
     sender_refresh: Sender<Vec<WinPackage>>,
@@ -55,7 +57,8 @@ impl UpdaterApp {
             sender: send,
             receiver: receive,
             sender_refresh: send_refresh,
-            receiver_refresh: receive_refresh
+            receiver_refresh: receive_refresh,
+            status_message: String::new()
         };
 
         updater.refresh_package_list();
@@ -124,13 +127,17 @@ impl UpdaterApp {
                         "Package_Updating" => {
                             let package = self.packages.iter_mut().find(|elem| elem.package.id.eq(&content.payload)).unwrap();
                             package.status = UpdateStatus::Updating;
+                            self.status_message = format!("Updating {}...", package.package.name);
                         }
                         "Package_Done" => {
                             let package = self.packages.iter_mut().find(|elem| elem.package.id.eq(&content.payload)).unwrap();
                             package.status = UpdateStatus::Done;
                             package.checked = false;
                         }
-                        "Finished" => { self.is_updating = false }
+                        "Finished" => {
+                            self.is_updating = false;
+                            self.status_message = String::from("Update finished.");
+                        }
                         _ => {}
                     }
                 }
@@ -142,6 +149,7 @@ impl UpdaterApp {
     fn refresh_package_list(&mut self) {
         self.is_refreshing = true;
         self.packages.clear();
+        self.status_message = String::from("Refreshing packages...");
 
         let sender_copy = self.sender_refresh.clone();
 
@@ -149,7 +157,6 @@ impl UpdaterApp {
             let updatable_packages = get_packages_to_update(Vec::new());
             sender_copy.send(updatable_packages).unwrap();
         });
-        
     }
 
     fn handle_refresh_button(&mut self, ui: &mut eframe::egui::Ui) {
@@ -168,6 +175,7 @@ impl UpdaterApp {
                         }
                     } ).collect();
                     self.packages = ui_packages;
+                    self.status_message = String::from("Select apps to update and press \"Update selected\"");
                 }
                 Err(_) => {}
             }
@@ -186,6 +194,9 @@ impl App for UpdaterApp {
         TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 self.handle_update_button(ui);
+                ui.with_layout(Layout::centered_and_justified(TopDown), |ui| {
+                    ui.label(self.status_message.as_str());
+                });
                 ui.with_layout(Layout::right_to_left(eframe::emath::Align::Center), |ui| {
                     self.handle_refresh_button(ui);
                 });
