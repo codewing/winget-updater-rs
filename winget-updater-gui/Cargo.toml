@@ -8,7 +8,7 @@ build = "build/build.rs"
 
 [dependencies]
 winget-updater-library = { path = "../winget-updater-library" }
-eframe = "0.20"
+eframe = "0.21"
 
 [target.'cfg(windows)'.build-dependencies]
-winres = "0.1.12"
+winres = "0.1"
