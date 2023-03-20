@@ -205,8 +205,28 @@ impl App for UpdaterApp {
     }    
 }
 
+fn load_icon(path: &str) -> eframe::IconData {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open(path)
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+
+    eframe::IconData {
+        rgba: icon_rgba,
+        width: icon_width,
+        height: icon_height,
+    }
+}
+
 fn main() {
     let mut win_options = NativeOptions::default();
     win_options.initial_window_size = Some(Vec2::new(830f32, 600f32));
-    run_native("WinGet Updater", win_options, Box::new(|cc| Box::new(UpdaterApp::new(cc))));
+    win_options.icon_data = Some(load_icon("./winget-updater-gui/build/browser.png"));
+    
+    run_native("WinGet Updater", win_options, Box::new(|cc| Box::new(UpdaterApp::new(cc))))
+                .expect("Couldn't run the app.");
 }
