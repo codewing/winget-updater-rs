@@ -1,2 +1,8 @@
+# Build Files
 **/target
+
+# IDE Files
 .idea
+
+# Temp Files
+InstallationLog.txt

@@ -1,7 +1,8 @@
 [workspace]
-
 members = [
     "winget-updater-library",
     "winget-updater-cli",
     "winget-updater-gui"
 ]
+
+default-members = ["winget-updater-gui"]
