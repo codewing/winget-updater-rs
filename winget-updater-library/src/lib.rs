@@ -15,7 +15,7 @@ pub mod wud {
 
         let packages_to_update = get_available_packages_to_update();
 
-        let regex = Regex::new(r"^(?P<name>.+?)\s+(?P<id>\S+\.\S+(\.\S+)*)\s+(?P<cur_vers>([<>] )?\S+?)\s+(?P<new_vers>\S+?)\s+(?P<source>\S+)$").unwrap();
+        let regex = Regex::new(r"^(?P<name>.+?)\s+(?P<id>(?:\S+\.\S+(\.\S+)*)|(?:\S*))\s+(?P<cur_vers>([<>] )?\S+?)\s+(?P<new_vers>\S+?)\s+(?P<source>\S+)$").unwrap();
 
         let mut result_vec: Vec<WinPackage> = Vec::new();
     
