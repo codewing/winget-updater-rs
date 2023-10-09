@@ -63,7 +63,7 @@ pub mod wud {
                                     .expect("failed to execute 'winget upgrade'");
         let result = String::from_utf8_lossy(&winget_output.stdout);
         let lines: Vec<_> = result.lines().collect();
-        let last_line = lines.iter().rposition(|&x| x.contains("upgrades available.")).unwrap();
+        let last_line = lines.iter().rposition(|&x| x.trim().is_empty()).expect("Couldn't find the empty line that is usually printed after the package listing");
         let packages_to_update = lines[2..last_line].into_iter().map(|x| x.to_string()).collect();
         packages_to_update
     }

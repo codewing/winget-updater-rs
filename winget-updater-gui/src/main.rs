@@ -176,6 +176,7 @@ impl UpdaterApp {
                     } ).collect();
                     self.packages = ui_packages;
                     self.status_message = String::from("Select apps to update and press \"Update selected\"");
+                    ui.ctx().request_repaint();
                 }
                 Err(_) => {}
             }
