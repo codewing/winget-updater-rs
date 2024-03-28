@@ -1,6 +1,6 @@
 use std::{thread, sync::mpsc::{channel, Sender, Receiver}};
 
-use eframe::{run_native, App, egui::{CentralPanel, ScrollArea, Grid, Button, TopBottomPanel, Layout}, NativeOptions, epaint::{Vec2}};
+use eframe::{egui::{self, Button, CentralPanel, Grid, Layout, ScrollArea, TopBottomPanel}, run_native, App, NativeOptions};
 use eframe::egui::Direction::TopDown;
 use winget_updater_library::wud::{get_packages_to_update, WinPackage, update_package};
 
@@ -206,7 +206,7 @@ impl App for UpdaterApp {
     }    
 }
 
-fn load_icon(path: &str) -> eframe::IconData {
+fn load_icon(path: &str) -> egui::IconData {
     let (icon_rgba, icon_width, icon_height) = {
         let image = image::open(path)
             .expect("Failed to open icon path")
@@ -216,7 +216,7 @@ fn load_icon(path: &str) -> eframe::IconData {
         (rgba, width, height)
     };
 
-    eframe::IconData {
+    egui::IconData {
         rgba: icon_rgba,
         width: icon_width,
         height: icon_height,
@@ -224,9 +224,13 @@ fn load_icon(path: &str) -> eframe::IconData {
 }
 
 fn main() {
-    let mut win_options = NativeOptions::default();
-    win_options.initial_window_size = Some(Vec2::new(830f32, 600f32));
-    win_options.icon_data = Some(load_icon("./winget-updater-gui/build/browser.png"));
+    let win_options = NativeOptions {
+        centered: true,
+        viewport: egui::ViewportBuilder::default()
+                                        .with_inner_size([900.0, 650.0])
+                                        .with_icon(load_icon("./winget-updater-gui/build/browser.png")),
+        ..Default::default()
+    };
     
     run_native("WinGet Updater", win_options, Box::new(|cc| Box::new(UpdaterApp::new(cc))))
                 .expect("Couldn't run the app.");
